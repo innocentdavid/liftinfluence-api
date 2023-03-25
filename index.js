@@ -34,7 +34,7 @@ app.use(cors())
 // }
 
 app.post('/api/notify', async (req, res) => {
-  const webhookUrl = 'https://hooks.slack.com/services/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'
+  const webhookUrl = 'https://hooks.slack.com/services/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'
   axios.post(webhookUrl, {
     text: req.body.message
   }).then(() => {
