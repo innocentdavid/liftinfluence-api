@@ -34,12 +34,14 @@ app.use(cors())
 // }
 
 app.post('/api/notify', async (req, res) => {
-  const webhookUrl = 'https://hooks.slack.com/services/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'
+  // const webhookUrl = 'https://hooks.slack.com/services/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'
+  const webhookUrl = 'https://hooks.slack.com/services/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'
   axios.post(webhookUrl, {
     text: req.body.message
   }).then(() => {
     res.send({ msg: 'sent!' })
   }).catch((e) => {
+    console.log('slack notification error: ', e);
     res.send({ msg: 'error', e })
   })
 
