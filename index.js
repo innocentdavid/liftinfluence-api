@@ -11,6 +11,7 @@ import cors from 'cors'
 import { IgApiClient, IgLoginTwoFactorRequiredError, IgLoginBadPasswordError } from 'instagram-private-api';
 import Promise from 'bluebird';
 import inquirer from 'inquirer';
+import axios from 'axios';
 
 const PORT = process.env.PORT || 8000
 const ig = new IgApiClient();
@@ -31,6 +32,18 @@ app.use(cors())
 //   result.setDate(result.getDate() + days);
 //   return result;
 // }
+
+app.post('/api/notify', async (req, res) => {
+  const webhookUrl = 'https://hooks.slack.com/services/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'
+  axios.post(webhookUrl, {
+    text: req.body.message
+  }).then(() => {
+    res.send({ msg: 'sent!' })
+  }).catch((e) => {
+    res.send({ msg: 'error', e })
+  })
+
+})
 
 app.post('/api/checkInstagramPassword', async (req, res) => {
   const IG_USERNAME = req.body.IG_USERNAME
