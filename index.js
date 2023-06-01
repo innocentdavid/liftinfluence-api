@@ -327,6 +327,39 @@ app.post('/api/generate_payment_intent', (req, res) => {
     });
 });
 
+
+app.post("/api/create_subscription", (req, res) => {
+  chargebee.customer.create({
+    first_name: req.body.first_name,
+    last_name: req.body.last_name,
+    allow_direct_debit: req.body.allow_direct_debit,
+    email: req.body.email,
+  }).request(function (error, result) {
+    if (error) {
+      // console.log(error);
+      res.send({ message: 'error', error })
+    } else {
+      // console.log(result); // {customer, card} = result
+      var customer = result.customer;
+
+      // create payment_source
+      chargebee.payment_source.create_using_token({
+        customer_id: customer.id,
+        token_id: req.body.token_id
+      }).request(function (error, result) {
+        if (error) {
+          res.send({ message: 'error', error })
+        } else {
+          // console.log(result); // {customer, payment_source} = result
+          const {customer, payment_source} = result
+          // var customer = result.customer; // var payment_source = result.payment_source;
+          res.send({ message: 'success', customer, payment_source })
+        }
+      });
+    }
+  });
+});
+
 app.get('/', (req, res) => res.send('Hello World!'))
 
 // app.listen(8000, () => console.log('Example app listening on port 8000!'))
