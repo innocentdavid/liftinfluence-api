@@ -336,6 +336,10 @@ app.post('/api/retrieve_customer', async (req, res) => {
   const customer = await chargebee.customer.retrieve(customerId).request().catch(err => {
     return { message: 'error', err }
   })
+  
+  console.log("error while executing retrieve_customer(): customer: ");
+  console.log(customer);
+
   if (customer.message === 'error') {
     console.log("error while executing retrieve_customer(): ");
     console.log(customer?.err);
@@ -346,7 +350,8 @@ app.post('/api/retrieve_customer', async (req, res) => {
   // const paymentSources = await getPaymentSourcesForCustomer(customerId)
   // console.log("customer: ");
   // console.log({...customer, paymentSources});
-  res.json({...customer});
+  // res.json({...customer, paymentSources});
+  res.json(customer);
 });
 
 app.post("/api/create_customer_and_subscription", async (req, res) => {
