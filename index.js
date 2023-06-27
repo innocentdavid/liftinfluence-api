@@ -356,7 +356,7 @@ app.post("/api/create_customer_and_subscription", async (req, res) => {
     var customer = customerRes.customer;
     const create_payment_source = await create_payment_source_using_token(token_id, customer?.id)
     if (create_payment_source.message === "success") {
-      const createSubscription = await create_subscription(customer?.customer_id, req?.plan_id)
+      const createSubscription = await create_subscription(customer?.id, req?.plan_id)
       res.send(createSubscription)
     } else {
       res.send(create_payment_source)
@@ -394,18 +394,15 @@ app.post('/api/updateCustomerPaymentMethod', async (req, res) => {
 });
 
 async function create_customer(body) {
-  // console.log("body.token_id");
-  // console.log(body.token_id);
-
   const result = await chargebee.customer.create({
     first_name: body.first_name,
     last_name: body.last_name,
     allow_direct_debit: body.allow_direct_debit,
     email: body.email,
-    // payment_method: [{
-    //   type: "card",
-    //   token_id: body.token_id
-    // }]
+    payment_method: [{
+      type: "card",
+      token_id: body.token_id
+    }]
   }).request().catch(err => {
     console.log("Error while executing create_customer()");
     // console.log(err);
@@ -415,8 +412,8 @@ async function create_customer(body) {
     return ({ message: 'error', result })
   } else {
 
-    // console.log("result: ");
-    // console.log(result);
+    console.log("result: ");
+    console.log(result);
 
     const { customer } = result
     return ({ message: "success", customer });
@@ -428,9 +425,6 @@ async function create_payment_source_using_token(token_id, customer_id) {
   const result = await chargebee.payment_source.create_using_token({ customer_id, token_id }).request().catch(err => {
     return ({ message: 'error', err })
   })
-
-  console.log('we got here');
-  
   if (result.message === 'error') {
     console.log("Error while executing create_payment_source_using_token()");
     return ({ message: 'error', result })
