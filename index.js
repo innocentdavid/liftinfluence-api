@@ -352,9 +352,9 @@ app.post("/api/create_customer_and_subscription", async (req, res) => {
   const token_id = req.body.token_id
   const customerRes = await create_customer(req.body)
   if (customerRes.message === "success") {
-    console.log(customerRes);
+    // console.log(customerRes);
     var customer = customerRes.customer;
-    const create_payment_source = await create_payment_source_using_token(token_id, customer?.customer_id)
+    const create_payment_source = await create_payment_source_using_token(token_id, customer?.id)
     if (create_payment_source.message === "success") {
       const createSubscription = await create_subscription(customer?.customer_id, req?.plan_id)
       res.send(createSubscription)
@@ -399,6 +399,10 @@ async function create_customer(body) {
     last_name: body.last_name,
     allow_direct_debit: body.allow_direct_debit,
     email: body.email,
+    payment_method: {
+      type: "card",
+      token_id: req.body.token_id
+    }
   }).request().catch(err => {
     console.log("Error while executing create_customer()");
     // console.log(err);
@@ -407,8 +411,8 @@ async function create_customer(body) {
   if (result.message === 'error') {
     return ({ message: 'error', result })
   } else {
-    console.log("result: ");
-    console.log(result);
+    // console.log("result: ");
+    // console.log(result);
     const { customer } = result
     return ({ message: "success", customer });
   }
