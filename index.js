@@ -337,7 +337,7 @@ app.post('/api/retrieve_customer', async (req, res) => {
     return { message: 'error', err }
   })
   if (customer.message === 'error') {
-    console.log("err: ");
+    console.log("error while executing retrieve_customer(): ");
     console.log(customer?.err);
     res.status(customer?.err?.http_status_code || 500);
     res.json(customer?.err);
@@ -380,7 +380,7 @@ app.post('/api/updateCustomerPaymentMethod', async (req, res) => {
         return ({ message: 'error', err })
       })
   if (result.message === 'error') {
-    console.log("err: ");
+    console.log("error while executing updateCustomerPaymentMethod(): ");
     console.log(result?.err);
     res.status(result?.err?.http_status_code || 500);
     res.json(result?.err);
