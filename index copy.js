@@ -8,14 +8,13 @@ import cors from 'cors'
 // const corsOptions = require('./config/corsOptions');
 // const { unbilled_charge } = require('chargebee/lib/resources/api_endpoints');
 // const { IgApiClient } = require('instagram-private-api');
-// import { IgApiClient, IgLoginTwoFactorRequiredError, IgLoginBadPasswordError } from 'instagram-private-api';
-// import { IgApiClient } from 'instagram-private-api';
-// import Promise from 'bluebird';
-// import inquirer from 'inquirer';
+import { IgApiClient, IgLoginTwoFactorRequiredError, IgLoginBadPasswordError } from 'instagram-private-api';
+import Promise from 'bluebird';
+import inquirer from 'inquirer';
 import axios from 'axios';
 
 const PORT = process.env.PORT || 8000
-// const ig = new IgApiClient();
+const ig = new IgApiClient();
 
 chargebee.configure({
   site: "sproutysocial",
@@ -47,53 +46,53 @@ app.post('/api/notify', async (req, res) => {
 
 })
 
-// app.post('/api/checkInstagramPassword', async (req, res) => {
-//   const IG_USERNAME = req.body.IG_USERNAME
-//   const IG_PASSWORD = req.body.IG_PASSWORD
+app.post('/api/checkInstagramPassword', async (req, res) => {
+  const IG_USERNAME = req.body.IG_USERNAME
+  const IG_PASSWORD = req.body.IG_PASSWORD
 
-//   ig.state.generateDevice(IG_USERNAME);
+  ig.state.generateDevice(IG_USERNAME);
 
-//   try {
-//     const loggedInUser = await ig.account.login(IG_USERNAME, IG_PASSWORD);
-//     // console.log(loggedInUser);
-//     res.send({ success: true, data: loggedInUser })
+  try {
+    const loggedInUser = await ig.account.login(IG_USERNAME, IG_PASSWORD);
+    // console.log(loggedInUser);
+    res.send({ success: true, data: loggedInUser })
 
-//   } catch (error) {
-//     // console.log(error.response.body);
-//     if (error.response.body.error_type === 'two_factor_required') {
-//       const { username, totp_two_factor_on, two_factor_identifier } = err.response.body.two_factor_info;
-//       // decide which method to use
-//       const verificationMethod = totp_two_factor_on ? '0' : '1'; // default to 1 for SMS
+  } catch (error) {
+    // console.log(error.response.body);
+    if (error.response.body.error_type === 'two_factor_required') {
+      const { username, totp_two_factor_on, two_factor_identifier } = err.response.body.two_factor_info;
+      // decide which method to use
+      const verificationMethod = totp_two_factor_on ? '0' : '1'; // default to 1 for SMS
 
-//       res.send({ success: false, error: error.response.body, two_factor_identifier, verificationMethod })
-//       return;
-//     } else {
-//       res.send({ success: false, error: error.response.body })
-//       return;
-//     }
-//   }
+      res.send({ success: false, error: error.response.body, two_factor_identifier, verificationMethod })
+      return;
+    } else {
+      res.send({ success: false, error: error.response.body })
+      return;
+    }
+  }
 
-// })
+})
 
-// app.post('/api/twoFactorLogin', async (req, res) => {
-//   const IG_USERNAME = req.body.IG_USERNAME
-//   const code = req.body.code
-//   const two_factor_identifier = req.body.two_factor_identifier
+app.post('/api/twoFactorLogin', async (req, res) => {
+  const IG_USERNAME = req.body.IG_USERNAME
+  const code = req.body.code
+  const two_factor_identifier = req.body.two_factor_identifier
 
-//   ig.state.generateDevice(IG_USERNAME);
-//   try {
-//     const r = await ig.account.twoFactorLogin({
-//       username: IG_USERNAME,
-//       verificationCode: code,
-//       twoFactorIdentifier: two_factor_identifier,
-//       verificationMethod, // '1' = SMS (default), '0' = TOTP (google auth for example)
-//       trustThisDevice: '1', // Can be omitted as '1' is used by default
-//     });
-//     res.send({ success: true, data: r })
-//   } catch (error) {
-//     res.send({ success: true, error: error.response.body })
-//   }
-// })
+  ig.state.generateDevice(IG_USERNAME);
+  try {
+    const r = await ig.account.twoFactorLogin({
+      username: IG_USERNAME,
+      verificationCode: code,
+      twoFactorIdentifier: two_factor_identifier,
+      verificationMethod, // '1' = SMS (default), '0' = TOTP (google auth for example)
+      trustThisDevice: '1', // Can be omitted as '1' is used by default
+    });
+    res.send({ success: true, data: r })
+  } catch (error) {
+    res.send({ success: true, error: error.response.body })
+  }
+})
 
 app.post("/api/generate_checkout_new_url", (req, res) => {
   chargebee.hosted_page.checkout_new_for_items({
@@ -136,7 +135,6 @@ app.post("/api/cancel_for_items", (req, res) => {
 });
 
 app.post("/api/create_customer", (req, res) => {
-  console.log('we dey here!');
   chargebee.customer.create({
     first_name: req.body.first_name,
     last_name: req.body.last_name,
@@ -150,7 +148,6 @@ app.post("/api/create_customer", (req, res) => {
   }).request(function (error, result) {
     if (error) {
       //handle error
-      console.log("Error while executing create_customer()");
       console.log(error);
       res.send({ message: 'error', error })
     } else {
@@ -160,18 +157,15 @@ app.post("/api/create_customer", (req, res) => {
       // console.log(card);
 
       // create payment_source
-      console.log('we reach here!');
       chargebee.payment_source.create_using_token({
         customer_id: customer.id,
         token_id: req.body.token_id
       }).request(function (error, result) {
         if (error) {
           //handle error
-          console.log("Error while executing payment_source()");
           console.log(error);
           res.send({ message: 'error', error })
         } else {
-          console.log("result");
           // console.log(result);
           var customer = result.customer;
           var payment_source = result.payment_source;
@@ -333,143 +327,38 @@ app.post('/api/generate_payment_intent', (req, res) => {
     });
 });
 
-async function create_customer(body) {
-  const result = await chargebee.customer.create({
-    first_name: body.first_name,
-    last_name: body.last_name,
-    allow_direct_debit: body.allow_direct_debit,
-    email: body.email,
-  }).request().catch(err => {
-    console.log("Error while executing create_customer()");
-    // console.log(err);
-    return ({ message: 'error', err })
-  })
-  // console.log(result);
-  if (result.message === 'error') {
-    return ({ message: 'error', result })
-  } else {
-    const { customer } = result
-    return ({ message: "success", customer });
-  }
-}
 
-async function create_payment_source_using_token(token_id, customer_id) {
-  const result = await chargebee.payment_source.create_using_token({ customer_id, token_id }).request().catch(err => {
-    return ({ message: 'error', err })
-  })
-  if (result.message === 'error') {
-    console.log("Error while executing create_payment_source_using_token()");
-    return ({ message: 'error', result })
-  }
-  const { customer, payment_source } = result
-  return ({ message: "success", customer, payment_source });
-}
-
-async function create_subscription(customer_id, plan_id) {
-  const result = await chargebee.subscription.create_with_items(
-    customer_id, {
-    subscription_items:
-      [{
-        item_price_id: plan_id,
-        item_price_price: '9995',
-        currency_code: 'USD',
-        quantity: 1,
-      }]
-  }
-  ).request().catch(err => {
-    console.log("Error while executing create_subscription()");
-    return ({ message: 'error', err })
-  })
-  if (result.message === 'error') {
-    return ({ message: 'error', result })
-  }
-  // console.log(result);
-  // var subscription = result.subscription;
-  // var customer = result.customer;
-  // var card = result.card;
-  // var invoice = result.invoice;
-  // var unbilled_charges = result.unbilled_charges;
-  return ({ message: 'success', result });
-}
-
-app.post("/api/create_customer_and_subscription", async (req, res) => {
-  const token_id = req.body.token_id
-  const customerRes = await create_customer(req.body)
-  if (customerRes.message === "success") {
-    var customer = customerRes.customer;
-    const create_payment_source = await create_payment_source_using_token(token_id, customer?.customer_id)
-    if (create_payment_source.message === "success") {
-      const createSubscription = await create_subscription(customer?.customer_id, req?.plan_id)
-      res.send(createSubscription)
+app.post("/api/create_subscription", (req, res) => {
+  chargebee.customer.create({
+    first_name: req.body.first_name,
+    last_name: req.body.last_name,
+    allow_direct_debit: req.body.allow_direct_debit,
+    email: req.body.email,
+  }).request(function (error, result) {
+    if (error) {
+      // console.log(error);
+      res.send({ message: 'error', error })
     } else {
-      res.send(create_payment_source)
+      // console.log(result); // {customer, card} = result
+      var customer = result.customer;
+
+      // create payment_source
+      chargebee.payment_source.create_using_token({
+        customer_id: customer.id,
+        token_id: req.body.token_id
+      }).request(function (error, result) {
+        if (error) {
+          res.send({ message: 'error', error })
+        } else {
+          // console.log(result); // {customer, payment_source} = result
+          const {customer, payment_source} = result
+          // var customer = result.customer; // var payment_source = result.payment_source;
+          res.send({ message: 'success', customer, payment_source })
+        }
+      });
     }
-  } else {
-    console.log(customerRes);
-    // res.send(customerRes)
-    res.status(customerRes?.result?.http_status_code || 500);
-    res.json(customerRes.result);
-  }
-
-  // chargebee.customer.create({
-  //   first_name: req.body.first_name,
-  //   last_name: req.body.last_name,
-  //   allow_direct_debit: req.body.allow_direct_debit,
-  //   email: req.body.email,
-  // }).request(async function (error, result) {
-  //   if (error) {
-  //     // console.log(error);
-  //     res.send({ message: 'error', error })
-  //   } else {
-  //     // console.log(result); // {customer, card} = result
-  //     // create payment_source
-  //     var customer = result.customer;
-  //     const token_id = req.body.token_id
-  //     const create_payment_source = await create_payment_source_using_token(token_id, customer)
-  //     res.send(create_payment_source)
-
-  //     // chargebee.payment_source.create_using_token({
-  //     //   customer_id: customer.id,
-  //     //   token_id: req.body.token_id
-  //     // }).request(function (error, result) {
-  //     //   if (error) {
-  //     //     res.send({ message: 'error', error })
-  //     //   } else {
-  //     //     // console.log(result); // {customer, payment_source} = result
-  //     //     const { customer, payment_source } = result
-  //     //     // var customer = result.customer; // var payment_source = result.payment_source;
-  //     //     res.send({ message: 'success', customer, payment_source })
-  //     //   }
-  //     // });
-  //   }
-  // });
+  });
 });
-
-
-
-
-
-app.post('/api/retrieve_customer', async (req, res) => {
-  const customerId = req.body.customerId
-  // console.log(customerId);
-  const customer = await chargebee.customer.retrieve(customerId).request().catch(err => {
-    return {message: 'error', err}
-  })
-  if(customer.message === 'error'){
-    console.log("err: ");
-    console.log(customer?.err);
-    res.status(customer?.err?.http_status_code || 500);
-    res.json(customer?.err); 
-    return;   
-  }
-  console.log("customer: ");
-  console.log(customer);
-  res.json(customer);
-});
-
-
-
-
 
 app.get('/', (req, res) => res.send('Hello World!'))
 
