@@ -136,7 +136,6 @@ app.post("/api/cancel_for_items", (req, res) => {
 });
 
 app.post("/api/create_customer", (req, res) => {
-  console.log('we dey here!');
   chargebee.customer.create({
     first_name: req.body.first_name,
     last_name: req.body.last_name,
@@ -160,7 +159,6 @@ app.post("/api/create_customer", (req, res) => {
       // console.log(card);
 
       // create payment_source
-      console.log('we reach here!');
       chargebee.payment_source.create_using_token({
         customer_id: customer.id,
         token_id: req.body.token_id
@@ -171,7 +169,6 @@ app.post("/api/create_customer", (req, res) => {
           console.log(error);
           res.send({ message: 'error', error })
         } else {
-          console.log("result");
           // console.log(result);
           var customer = result.customer;
           var payment_source = result.payment_source;
@@ -333,6 +330,66 @@ app.post('/api/generate_payment_intent', (req, res) => {
     });
 });
 
+app.post('/api/retrieve_customer', async (req, res) => {
+  const customerId = req.body.customerId
+  // console.log(customerId);
+  const customer = await chargebee.customer.retrieve(customerId).request().catch(err => {
+    return {message: 'error', err}
+  })
+  if(customer.message === 'error'){
+    console.log("err: ");
+    console.log(customer?.err);
+    res.status(customer?.err?.http_status_code || 500);
+    res.json(customer?.err); 
+    return;   
+  }
+  console.log("customer: ");
+  console.log(customer);
+  res.json(customer);
+});
+
+app.post("/api/create_customer_and_subscription", async (req, res) => {
+  const token_id = req.body.token_id
+  const customerRes = await create_customer(req.body)
+  if (customerRes.message === "success") {
+    var customer = customerRes.customer;
+    const create_payment_source = await create_payment_source_using_token(token_id, customer?.customer_id)
+    if (create_payment_source.message === "success") {
+      const createSubscription = await create_subscription(customer?.customer_id, req?.plan_id)
+      res.send(createSubscription)
+    } else {
+      res.send(create_payment_source)
+    }
+  } else {
+    console.log(customerRes);
+    // res.send(customerRes)
+    res.status(customerRes?.result?.http_status_code || 500);
+    res.json(customerRes.result);
+  }
+});
+
+app.post('/api/updateCustomerPaymentMethod', async (req, res) => {
+  const customerId = req.body.customer_id
+  const tmp_token = req.body.token_id
+  // console.log(customerId);
+  const customer = await chargebee.customer.update_payment_method(customerId, {
+    type : "card",
+    tmp_token
+  }).request().catch(err => {
+    return {message: 'error', err}
+  })
+  if(customer.message === 'error'){
+    console.log("err: ");
+    console.log(customer?.err);
+    res.status(customer?.err?.http_status_code || 500);
+    res.json(customer?.err); 
+    return;   
+  }
+  console.log("customer: ");
+  console.log(customer);
+  res.json(customer);
+});
+
 async function create_customer(body) {
   const result = await chargebee.customer.create({
     first_name: body.first_name,
@@ -391,81 +448,6 @@ async function create_subscription(customer_id, plan_id) {
   // var unbilled_charges = result.unbilled_charges;
   return ({ message: 'success', result });
 }
-
-app.post("/api/create_customer_and_subscription", async (req, res) => {
-  const token_id = req.body.token_id
-  const customerRes = await create_customer(req.body)
-  if (customerRes.message === "success") {
-    var customer = customerRes.customer;
-    const create_payment_source = await create_payment_source_using_token(token_id, customer?.customer_id)
-    if (create_payment_source.message === "success") {
-      const createSubscription = await create_subscription(customer?.customer_id, req?.plan_id)
-      res.send(createSubscription)
-    } else {
-      res.send(create_payment_source)
-    }
-  } else {
-    console.log(customerRes);
-    // res.send(customerRes)
-    res.status(customerRes?.result?.http_status_code || 500);
-    res.json(customerRes.result);
-  }
-
-  // chargebee.customer.create({
-  //   first_name: req.body.first_name,
-  //   last_name: req.body.last_name,
-  //   allow_direct_debit: req.body.allow_direct_debit,
-  //   email: req.body.email,
-  // }).request(async function (error, result) {
-  //   if (error) {
-  //     // console.log(error);
-  //     res.send({ message: 'error', error })
-  //   } else {
-  //     // console.log(result); // {customer, card} = result
-  //     // create payment_source
-  //     var customer = result.customer;
-  //     const token_id = req.body.token_id
-  //     const create_payment_source = await create_payment_source_using_token(token_id, customer)
-  //     res.send(create_payment_source)
-
-  //     // chargebee.payment_source.create_using_token({
-  //     //   customer_id: customer.id,
-  //     //   token_id: req.body.token_id
-  //     // }).request(function (error, result) {
-  //     //   if (error) {
-  //     //     res.send({ message: 'error', error })
-  //     //   } else {
-  //     //     // console.log(result); // {customer, payment_source} = result
-  //     //     const { customer, payment_source } = result
-  //     //     // var customer = result.customer; // var payment_source = result.payment_source;
-  //     //     res.send({ message: 'success', customer, payment_source })
-  //     //   }
-  //     // });
-  //   }
-  // });
-});
-
-
-
-
-
-app.post('/api/retrieve_customer', async (req, res) => {
-  const customerId = req.body.customerId
-  // console.log(customerId);
-  const customer = await chargebee.customer.retrieve(customerId).request().catch(err => {
-    return {message: 'error', err}
-  })
-  if(customer.message === 'error'){
-    console.log("err: ");
-    console.log(customer?.err);
-    res.status(customer?.err?.http_status_code || 500);
-    res.json(customer?.err); 
-    return;   
-  }
-  console.log("customer: ");
-  console.log(customer);
-  res.json(customer);
-});
 
 
 
