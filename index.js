@@ -399,10 +399,10 @@ async function create_customer(body) {
     last_name: body.last_name,
     allow_direct_debit: body.allow_direct_debit,
     email: body.email,
-    payment_method: [{
-      type: "card",
-      token_id: body.token_id
-    }]
+    token_id: body.token_id
+    // payment_method: [{
+    //   type: "card",
+    // }]
   }).request().catch(err => {
     console.log("Error while executing create_customer()");
     // console.log(err);
