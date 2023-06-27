@@ -349,18 +349,20 @@ app.post('/api/retrieve_customer', async (req, res) => {
 });
 
 app.post("/api/create_customer_and_subscription", async (req, res) => {
-  const token_id = req.body.token_id
+  // const token_id = req.body.token_id
   const customerRes = await create_customer(req.body)
   if (customerRes.message === "success") {
     // console.log(customerRes);
     var customer = customerRes.customer;
-    const create_payment_source = await create_payment_source_using_token(token_id, customer?.id)
-    if (create_payment_source.message === "success") {
-      const createSubscription = await create_subscription(customer?.id, req?.plan_id)
-      res.send(createSubscription)
-    } else {
-      res.send(create_payment_source)
-    }
+    const createSubscription = await create_subscription(customer?.id, req?.body?.plan_id)
+    res.send(createSubscription)
+    // const create_payment_source = await create_payment_source_using_token(token_id, customer?.id)
+    // if (create_payment_source.message === "success") {
+    //   const createSubscription = await create_subscription(customer?.id, req?.plan_id)
+    //   res.send(createSubscription)
+    // } else {
+    //   res.send(create_payment_source)
+    // }
   } else {
     console.log(customerRes);
     // res.send(customerRes)
@@ -420,18 +422,18 @@ async function create_customer(body) {
   }
 }
 
-async function create_payment_source_using_token(token_id, customer_id) {
-  console.log(customer_id, token_id);
-  const result = await chargebee.payment_source.create_using_token({ customer_id, token_id }).request().catch(err => {
-    return ({ message: 'error', err })
-  })
-  if (result.message === 'error') {
-    console.log("Error while executing create_payment_source_using_token()");
-    return ({ message: 'error', result })
-  }
-  const { customer, payment_source } = result
-  return ({ message: "success", customer, payment_source });
-}
+// async function create_payment_source_using_token(token_id, customer_id) {
+//   console.log(customer_id, token_id);
+//   const result = await chargebee.payment_source.create_using_token({ customer_id, token_id }).request().catch(err => {
+//     return ({ message: 'error', err })
+//   })
+//   if (result.message === 'error') {
+//     console.log("Error while executing create_payment_source_using_token()");
+//     return ({ message: 'error', result })
+//   }
+//   const { customer, payment_source } = result
+//   return ({ message: "success", customer, payment_source });
+// }
 
 async function create_subscription(customer_id, plan_id) {
   const result = await chargebee.subscription.create_with_items(
