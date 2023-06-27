@@ -413,6 +413,7 @@ async function create_customer(body) {
 }
 
 async function create_payment_source_using_token(token_id, customer_id) {
+  console.log(customer_id, token_id);
   const result = await chargebee.payment_source.create_using_token({ customer_id, token_id }).request().catch(err => {
     return ({ message: 'error', err })
   })
