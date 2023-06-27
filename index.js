@@ -401,7 +401,7 @@ async function create_customer(body) {
     email: body.email,
     payment_method: {
       type: "card",
-      token_id: req.body.token_id
+      token_id: body.token_id
     }
   }).request().catch(err => {
     console.log("Error while executing create_customer()");
@@ -411,8 +411,8 @@ async function create_customer(body) {
   if (result.message === 'error') {
     return ({ message: 'error', result })
   } else {
-    // console.log("result: ");
-    // console.log(result);
+    console.log("result: ");
+    console.log(result);
     const { customer } = result
     return ({ message: "success", customer });
   }
