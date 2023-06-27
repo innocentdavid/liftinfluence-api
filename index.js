@@ -343,10 +343,10 @@ app.post('/api/retrieve_customer', async (req, res) => {
     res.json(customer?.err);
     return;
   }
-  const paymentSources = await getPaymentSourcesForCustomer(customerId)
-  console.log("customer: ");
-  console.log({...customer, paymentSources});
-  res.json({...customer, paymentSources});
+  // const paymentSources = await getPaymentSourcesForCustomer(customerId)
+  // console.log("customer: ");
+  // console.log({...customer, paymentSources});
+  res.json({...customer});
 });
 
 app.post("/api/create_customer_and_subscription", async (req, res) => {
