@@ -394,6 +394,9 @@ app.post('/api/updateCustomerPaymentMethod', async (req, res) => {
 });
 
 async function create_customer(body) {
+  console.log("body.token_id");
+  console.log(body.token_id);
+
   const result = await chargebee.customer.create({
     first_name: body.first_name,
     last_name: body.last_name,
@@ -411,8 +414,10 @@ async function create_customer(body) {
   if (result.message === 'error') {
     return ({ message: 'error', result })
   } else {
+
     console.log("result: ");
     console.log(result);
+
     const { customer } = result
     return ({ message: "success", customer });
   }
