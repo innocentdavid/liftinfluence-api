@@ -369,14 +369,14 @@ app.post("/api/create_customer_and_subscription", async (req, res) => {
 });
 
 app.post('/api/updateCustomerPaymentMethod', async (req, res) => {
-  const customerId = req.body.customer_id
+  const customer_id = req.body.customer_id
   const tmp_token = req.body.token_id
-  // console.log(customerId);
-  const customer = await chargebee.customer.update_payment_method(customerId, {
-    payment_method: {
+  // console.log(customer_id);
+  const customer = await chargebee.customer.update_payment_method(customer_id, {
+    payment_method: [{
       type: "card",
       tmp_token
-    }
+    }]
   }).request().catch(err => {
     return { message: 'error', err }
   })
