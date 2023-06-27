@@ -334,14 +334,14 @@ app.post('/api/retrieve_customer', async (req, res) => {
   const customerId = req.body.customerId
   // console.log(customerId);
   const customer = await chargebee.customer.retrieve(customerId).request().catch(err => {
-    return {message: 'error', err}
+    return { message: 'error', err }
   })
-  if(customer.message === 'error'){
+  if (customer.message === 'error') {
     console.log("err: ");
     console.log(customer?.err);
     res.status(customer?.err?.http_status_code || 500);
-    res.json(customer?.err); 
-    return;   
+    res.json(customer?.err);
+    return;
   }
   console.log("customer: ");
   console.log(customer);
@@ -373,17 +373,19 @@ app.post('/api/updateCustomerPaymentMethod', async (req, res) => {
   const tmp_token = req.body.token_id
   // console.log(customerId);
   const customer = await chargebee.customer.update_payment_method(customerId, {
-    type : "card",
-    tmp_token
+    payment_method: {
+      type: "card",
+      tmp_token
+    }
   }).request().catch(err => {
-    return {message: 'error', err}
+    return { message: 'error', err }
   })
-  if(customer.message === 'error'){
+  if (customer.message === 'error') {
     console.log("err: ");
     console.log(customer?.err);
     res.status(customer?.err?.http_status_code || 500);
-    res.json(customer?.err); 
-    return;   
+    res.json(customer?.err);
+    return;
   }
   console.log("customer: ");
   console.log(customer);
