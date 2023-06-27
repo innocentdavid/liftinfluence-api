@@ -332,7 +332,6 @@ app.post('/api/generate_payment_intent', (req, res) => {
 
 app.post('/api/retrieve_customer', async (req, res) => {
   const customerId = req.body.customerId
-  const paymentSources = getPaymentSourcesForCustomer(customerId)
   // console.log(customerId);
   const customer = await chargebee.customer.retrieve(customerId).request().catch(err => {
     return { message: 'error', err }
@@ -344,6 +343,7 @@ app.post('/api/retrieve_customer', async (req, res) => {
     res.json(customer?.err);
     return;
   }
+  const paymentSources = await getPaymentSourcesForCustomer(customerId)
   console.log("customer: ");
   console.log({...customer, paymentSources});
   res.json({...customer, paymentSources});
@@ -402,6 +402,7 @@ async function getPaymentSourcesForCustomer(customer_id) {
   if (result.message === 'error') {
     return ({ message: 'error', result })
   } else {
+    console.log({ message: "success", result });
     return ({ message: "success", result });
   }
 }
