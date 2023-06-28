@@ -336,7 +336,7 @@ app.post('/api/retrieve_customer', async (req, res) => {
   const customer = await chargebee.customer.retrieve(customerId).request().catch(err => {
     return { message: 'error', err }
   })
-  
+
   // console.log(customer);
 
   if (customer.message === 'error') {
@@ -348,8 +348,8 @@ app.post('/api/retrieve_customer', async (req, res) => {
   }
   const paymentSources = await getPaymentSourcesForCustomer(customerId)
   console.log("customer: ");
-  console.log({...customer, paymentSources});
-  res.json({...customer, paymentSources});
+  console.log({ ...customer, paymentSources });
+  res.json({ ...customer, paymentSources });
   // res.json(customer);
 });
 
@@ -377,21 +377,19 @@ app.post("/api/create_customer_and_subscription", async (req, res) => {
 });
 
 app.post('/api/updateCustomerPaymentMethod', async (req, res) => {
-  const customer_id = req.body.customer_id  
+  const customer_id = req.body.customer_id
   const token_id = req.body.token_id
-  console.log(customer_id);
+  // console.log(customer_id);
   const result = await chargebee.payment_source.create_using_token({ customer_id, token_id }).request().catch(err => {
-        return ({ message: 'error', err })
-      })
+    return ({ message: 'error', err })
+  })
   if (result.message === 'error') {
     console.log("error while executing updateCustomerPaymentMethod(): ");
-    console.log(result?.err);
+    // console.log(result?.err);
     res.status(result?.err?.http_status_code || 500);
     res.json(result?.err);
     return;
   }
-  console.log("result: ");
-  console.log(result);
   res.json(result);
 });
 
