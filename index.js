@@ -353,6 +353,11 @@ app.post('/api/retrieve_customer', async (req, res) => {
   // res.json(customer);
 });
 
+app.post("/api/create_subscription", async (req, res) => {
+  const createSubscription = await create_subscription(req?.body?.customer_id, req?.body?.plan_id)
+  res.send(createSubscription)
+});
+
 app.post("/api/create_customer_and_subscription", async (req, res) => {
   // const token_id = req.body.token_id
   const customerRes = await create_customer(req.body)
@@ -450,6 +455,7 @@ async function create_customer(body) {
 // }
 
 async function create_subscription(customer_id, plan_id) {
+  console.log({customer_id, plan_id});
   const result = await chargebee.subscription.create_with_items(
     customer_id, {
     subscription_items:
@@ -462,6 +468,7 @@ async function create_subscription(customer_id, plan_id) {
   }
   ).request().catch(err => {
     console.log("Error while executing create_subscription()");
+    console.log(err);
     return ({ message: 'error', err })
   })
   if (result.message === 'error') {
