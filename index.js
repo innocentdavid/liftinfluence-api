@@ -13,14 +13,18 @@ import cors from 'cors'
 // import Promise from 'bluebird';
 // import inquirer from 'inquirer';
 import axios from 'axios';
+import NodeMailer from 'nodemailer'
+// import SmtpTransport from 'nodemailer-smtp-transport'
+// const dotenv = require('dotenv');
+import dotenv from 'dotenv';
 
+dotenv.config({ path: '.env' });
 const PORT = process.env.PORT || 8000
 // const ig = new IgApiClient();
 
 chargebee.configure({
-  site: "sproutysocial",
-  // api_key: "live_JtEKTrE7pAsvrOJar1Oc8zhdk5IbvWzE"
-  api_key: "live_BW3FVqcdbW4naokDniIcdajdNBWm3MJc1v"
+  site: process.env.CHARGEBEE_SITE,
+  api_key: process.env.CHARGEBEE_API_KEY
 });
 const app = express()
 
@@ -455,7 +459,7 @@ async function create_customer(body) {
 // }
 
 async function create_subscription(customer_id, plan_id) {
-  console.log({customer_id, plan_id});
+  console.log({ customer_id, plan_id });
   const result = await chargebee.subscription.create_with_items(
     customer_id, {
     subscription_items:
@@ -483,9 +487,36 @@ async function create_subscription(customer_id, plan_id) {
   return ({ message: 'success', result });
 }
 
+const transporter = NodeMailer.createTransport({
+  host: process.env.SMPT_HOST,
+  port: process.env.SMPT_PORT,
+  debug: true,
+  auth: {
+    user: process.env.SMPT_LOGIN,
+    pass: process.env.SMPT_KEY,
+  },
+});
 
+const send_email = (to, subject, content) => {
+  transporter.sendMail(
+    { from: "SproutySocial Support support@sproutysocial.com", to, subject, html: content, sender: { name: "SproutySocial", email: "support@sproutysocial.com" }, },
+    (error, info) => {
+      if (error) {
+        // console.log(error);
+        return { success: false, message: error }
+      } else {
+        // console.log(info);
+        return { success: true, message: info.response }
+      }
+    }
+  )
+}
 
-
+app.post('/api/send_email', async (req, res) => {
+  console.log(req.body.email, req.body.subject, req.body.htmlContent);
+  send_email(req.body.email, req.body.subject, req.body.htmlContent)
+  res.send({ success: true, message: 'Email sent successfully' })
+})
 
 app.get('/', (req, res) => res.send('Hello World!'))
 
