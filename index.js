@@ -502,10 +502,11 @@ const send_email = (to, subject, content) => {
     { from: "SproutySocial Support support@sproutysocial.com", to, subject, html: content, sender: { name: "SproutySocial", email: "support@sproutysocial.com" }, },
     (error, info) => {
       if (error) {
-        // console.log(error);
+        console.log(error);
         return { success: false, message: error }
       } else {
         // console.log(info);
+        console.log("email sent to: " + info.accepted[0]);
         return { success: true, message: info.response }
       }
     }
@@ -513,7 +514,6 @@ const send_email = (to, subject, content) => {
 }
 
 app.post('/api/send_email', async (req, res) => {
-  console.log(req.body.email, req.body.subject, req.body.htmlContent);
   send_email(req.body.email, req.body.subject, req.body.htmlContent)
   res.send({ success: true, message: 'Email sent successfully' })
 })
