@@ -56,11 +56,18 @@ router.post('/create_subscription', async (req, res) => {
             expand: ['latest_invoice.payment_intent']
         })
 
+        console.log({
+            message: `Subscription successful!`,
+            customer,
+            subscription,
+            clientSecret: subscription?.latest_invoice?.payment_intent?.client_secret
+        });
+
         return res.status(200).json({
             message: `Subscription successful!`,
             customer,
             subscription,
-            clientSecret: subscription.latest_invoice.payment_intent.client_secret
+            clientSecret: subscription?.latest_invoice?.payment_intent?.client_secret
         });
     } catch (error) {
         // console.error(error);
