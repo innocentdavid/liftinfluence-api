@@ -10,6 +10,13 @@ router.post('/', async (req, res) => {
     return res.json({});
 });
 
+function getUnixTimestampForSevenDaysLater() {
+    const currentDate = new Date();
+    const sevenDaysLater = new Date(currentDate);
+    sevenDaysLater.setDate(currentDate.getDate() + 7); // Add 7 days to the current date
+    return Math.floor(sevenDaysLater.getTime() / 1000); // Convert to Unix timestamp (in seconds)
+}
+
 router.post('/create_subscription', async (req, res) => {
     try {
         const { name, email, paymentMethod, price } = req.body;
@@ -41,6 +48,7 @@ router.post('/create_subscription', async (req, res) => {
                     price
                 }
             ],
+            trial_end: getUnixTimestampForSevenDaysLater(),  //# 7 days free trial
             payment_settings: {
                 payment_method_types: ['card'],
                 save_default_payment_method: "on_subscription"
