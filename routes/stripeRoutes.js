@@ -13,7 +13,7 @@ router.post('/', async (req, res) => {
 router.post('/create_subscription', async (req, res) => {
     try {
         const { name, email, paymentMethod, price } = req.body;
-        // console.log({ name, email, paymentMethod, price });
+        console.log({ name, email, paymentMethod, price });
         const customer = await stripe.customers.create({
             name, email,
             payment_method: paymentMethod,
