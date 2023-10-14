@@ -20,7 +20,7 @@ function getUnixTimestampForSevenDaysLater() {
 router.post('/create_subscription', async (req, res) => {
     try {
         const { name, email, paymentMethod, price } = req.body;
-        console.log({ name, email, paymentMethod, price });
+        // console.log({ name, email, paymentMethod, price });
         const customer = await stripe.customers.create({
             name, email,
             payment_method: paymentMethod,
@@ -56,12 +56,12 @@ router.post('/create_subscription', async (req, res) => {
             expand: ['latest_invoice.payment_intent']
         })
 
-        console.log({
-            message: `Subscription successful!`,
-            customer,
-            subscription,
-            clientSecret: subscription?.latest_invoice?.payment_intent?.client_secret
-        });
+        // console.log({
+        //     message: `Subscription successful!`,
+        //     customer,
+        //     subscription,
+        //     clientSecret: subscription?.latest_invoice?.payment_intent?.client_secret
+        // });
 
         return res.status(200).json({
             message: `Subscription successful!`,
