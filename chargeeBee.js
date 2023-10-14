@@ -409,7 +409,7 @@ const transporter = NodeMailer.createTransport({
 
 const send_email = (to, subject, content) => {
   transporter.sendMail(
-    { from: "SproutySocial Support support@sproutysocial.com", to, subject, html: content, sender: { name: "SproutySocial", email: "support@sproutysocial.com" }, },
+    { from: "Liftinfluence Support support@Liftinfluence.com", to, subject, html: content, sender: { name: "Liftinfluence", email: "support@Liftinfluence.com" }, },
     (error, info) => {
       if (error) {
         console.log(error);
