@@ -75,6 +75,18 @@ router.post('/create_subscription', async (req, res) => {
     }
 });
 
+router.post('/cancel_subscription', async (req, res) => {
+    try {
+        const { subscription_id } = req.body;
+
+        await stripe.subscriptions.cancel(subscription_id)
+        return res.status(200).json({ message: `Subscription cancelled successful!` });
+    } catch (error) {
+        // console.error(error);
+        return res.status(500).json({ message: `Internal server error: ${error}` });
+    }
+});
+
 router.post('/retrieve_customer', async (req, res) => {
     const { customer_id } = req.body;
     const customer = await stripe.customers.retrieve(
