@@ -71,7 +71,7 @@ router.post('/create_subscription', async (req, res) => {
         });
     } catch (error) {
         // console.error(error);
-        return res.status(500).json({ message: `Internal server error: ${error}` });
+        return res.status(500).json({ message: `${error}` });
     }
 });
 
@@ -95,7 +95,7 @@ router.post('/create_subscription_for_customer', async (req, res) => {
         });
     } catch (error) {
         // console.error(error);
-        return res.status(500).json({ message: `Internal server error: ${error}` });
+        return res.status(500).json({ message: `${error}` });
     }
 });
 
@@ -107,7 +107,7 @@ router.post('/cancel_subscription', async (req, res) => {
         return res.status(200).json({ message: `Subscription cancelled successful!` });
     } catch (error) {
         // console.error(error);
-        return res.status(500).json({ message: `Internal server error: ${error}` });
+        return res.status(500).json({ message: `${error}` });
     }
 });
 
