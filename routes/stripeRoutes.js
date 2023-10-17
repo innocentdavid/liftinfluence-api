@@ -75,6 +75,30 @@ router.post('/create_subscription', async (req, res) => {
     }
 });
 
+router.post('/create_subscription_for_customer', async (req, res) => {
+    try {
+        const { customer_id, price } = req.body;
+
+        const subscription = await stripe.subscriptions.create({
+            customer: customer_id,
+            items: [{ price }],
+            payment_settings: {
+                payment_method_types: ['card'],
+                save_default_payment_method: "on_subscription"
+            },
+            expand: ['latest_invoice.payment_intent']
+        })
+        return res.status(200).json({
+            message: `Subscription successful!`,
+            subscription,
+            clientSecret: subscription?.latest_invoice?.payment_intent?.client_secret
+        });
+    } catch (error) {
+        // console.error(error);
+        return res.status(500).json({ message: `Internal server error: ${error}` });
+    }
+});
+
 router.post('/cancel_subscription', async (req, res) => {
     try {
         const { subscription_id } = req.body;
