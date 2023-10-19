@@ -31,24 +31,15 @@ router.post('/create_subscription', async (req, res) => {
         //     name: "Monthly Subscription",
         // })
 
+        const trial_end = getUnixTimestampForSevenDaysLater() //# 7 days free trial
+
         const subscription = await stripe.subscriptions.create({
             customer: customer.id,
             items: [
-                // {
-                //     price_data: {
-                //         currency: "USD",
-                //         product: product.id,
-                //         unit_amount: "40000",
-                //         recurring: {
-                //             interval: "month"
-                //         }
-                //     }
-                // }
-                {
-                    price
-                }
+                // { price_data: { currency: "USD", product: product.id, unit_amount: "40000", recurring: { interval: "month" }} },
+                { price }
             ],
-            trial_end: getUnixTimestampForSevenDaysLater(),  //# 7 days free trial
+            trial_end,
             payment_settings: {
                 payment_method_types: ['card'],
                 save_default_payment_method: "on_subscription"
@@ -62,6 +53,10 @@ router.post('/create_subscription', async (req, res) => {
         //     subscription,
         //     clientSecret: subscription?.latest_invoice?.payment_intent?.client_secret
         // });
+
+        if(subscription){
+            console.log(`Subscription created for ${email} \n trial ends at: ${trial_end}\n`);
+        }
 
         return res.status(200).json({
             message: `Subscription successful!`,
