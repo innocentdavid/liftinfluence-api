@@ -55,7 +55,7 @@ router.post('/create_subscription', async (req, res) => {
         // });
 
         if(subscription){
-            console.log(`Subscription created for ${email} \n trial ends at: ${trial_end}\n`);
+            console.log(`Subscription created for ${email} \n trial ends at: ${trial_end} \n`);
         }
 
         return res.status(200).json({
@@ -83,6 +83,11 @@ router.post('/create_subscription_for_customer', async (req, res) => {
             },
             expand: ['latest_invoice.payment_intent']
         })
+
+        if(subscription){
+            console.log(`Subscription created for customer: ${customer_id}; direct billing \n`);
+        }
+
         return res.status(200).json({
             message: `Subscription successful!`,
             subscription,
@@ -97,8 +102,8 @@ router.post('/create_subscription_for_customer', async (req, res) => {
 router.post('/cancel_subscription', async (req, res) => {
     try {
         const { subscription_id } = req.body;
-
         await stripe.subscriptions.cancel(subscription_id)
+        console.log(`Subscription: ${subscription_id} has been cancelled! \n`);
         return res.status(200).json({ message: `Subscription cancelled successful!` });
     } catch (error) {
         // console.error(error);
