@@ -65,14 +65,13 @@ export const sendSMS = async (content) => {
   const apiKey = process.env.BREVO_SMS_API_KEY;
   const apiUrl = 'https://api.brevo.com/v3/transactionalSMS/sms';
 
+  // const recipients = ['+2348112659304'];
   const recipients = ['+38631512279', '+387603117027'];
   for (const recipient of recipients) {
     const smsData = {
       type: 'transactional',
       unicodeEnabled: false,
-      // sender: 'Cevapcici',
       sender: 'LiftInflue',
-      // recipient: '+38631512279',
       recipient,
       content
     };
@@ -98,6 +97,9 @@ export const sendSMS = async (content) => {
 
 
 app.get('/api/send_sms_test', async (req, res) => {
+  // const username = 'dev_cent';
+  // const email = 'paulinnocent05@gmail.com';
+  // await sendSMS(`@${username} with email ${email} has just registered for a free trial. \n+15 portions cevapa kod cesma added.`)
   await sendSMS('Testing sms')
   res.send({ success: true, message: 'SMS sent successfully' })
 })

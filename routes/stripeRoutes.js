@@ -20,7 +20,7 @@ function getUnixTimestampForSevenDaysLater() {
 // new subscription with 7days trial.
 router.post('/create_subscription', async (req, res) => {
     try {
-        const { name, email, paymentMethod, price } = req.body;
+        const { username, name, email, paymentMethod, price } = req.body;
         // console.log({ name, email, paymentMethod, price });
         const customer = await stripe.customers.create({
             name, email,
@@ -56,7 +56,7 @@ router.post('/create_subscription', async (req, res) => {
         // });
 
         if(subscription){
-            await sendSMS(`Subscription created for ${email}`);
+            await sendSMS(`@${username} with email ${email} has just registered for a free trial. \n+15 portions cevapa kod cesma added.`);
             console.log(`Subscription created for ${email} \n trial ends at: ${trial_end} \n`);
         }
 
