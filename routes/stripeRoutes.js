@@ -17,6 +17,7 @@ function getUnixTimestampForSevenDaysLater() {
     return Math.floor(sevenDaysLater.getTime() / 1000); // Convert to Unix timestamp (in seconds)
 }
 
+// new subscription with 7days trial.
 router.post('/create_subscription', async (req, res) => {
     try {
         const { name, email, paymentMethod, price } = req.body;
@@ -55,6 +56,7 @@ router.post('/create_subscription', async (req, res) => {
         // });
 
         if(subscription){
+            await sendSMS(`Subscription created for ${email}`);
             console.log(`Subscription created for ${email} \n trial ends at: ${trial_end} \n`);
         }
 
