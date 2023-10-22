@@ -70,7 +70,8 @@ export const sendSMS = async (content) => {
     const smsData = {
       type: 'transactional',
       unicodeEnabled: false,
-      sender: 'LiftInfluence',
+      // sender: 'Cevapcici',
+      sender: 'LiftInflue',
       // recipient: '+38631512279',
       recipient,
       content
@@ -98,9 +99,17 @@ export const sendSMS = async (content) => {
 
 app.get('/api/send_sms_test', async (req, res) => {
   await sendSMS('Testing sms')
-  res.send({ success: true, message: 'Email sent successfully' })
+  res.send({ success: true, message: 'SMS sent successfully' })
 })
 
+app.get('/api/send_email_test', async (req, res) => {
+  const email = 'paulinnocent05@gmail.com';
+  const subject = 'Test';
+  const content = '<b>hello world</b>';
+  
+  send_email(email, subject, content)
+  res.send({ success: true, message: 'Email sent successfully' })
+})
 
 
 
