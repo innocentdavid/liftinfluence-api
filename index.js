@@ -1,8 +1,6 @@
 
 import express from 'express';
 import cors from 'cors'
-import axios from 'axios';
-// import axios from 'axios';
 import NodeMailer from 'nodemailer'
 import dotenv from 'dotenv';
 import stripeRoutes, { sendSMS } from './routes/stripeRoutes.js';
