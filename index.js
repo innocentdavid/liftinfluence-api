@@ -5,7 +5,7 @@ import axios from 'axios';
 // import axios from 'axios';
 import NodeMailer from 'nodemailer'
 import dotenv from 'dotenv';
-import stripeRoutes from './routes/stripeRoutes.js';
+import stripeRoutes, { sendSMS } from './routes/stripeRoutes.js';
 import bodyParser from 'body-parser';
 
 dotenv.config({ path: '.env' });
@@ -60,40 +60,6 @@ app.post('/api/send_email', async (req, res) => {
 // var campaignId = 789; // Number | Id of the SMS campaign
 
 // var phoneNumber = new Brevo.SendTestSms(); // SendTestSms | Mobile number of the recipient with the country code. This number must belong to one of your contacts in Brevo account and must not be blacklisted
-
-export const sendSMS = async (content) => {
-  const apiKey = process.env.BREVO_SMS_API_KEY;
-  const apiUrl = 'https://api.brevo.com/v3/transactionalSMS/sms';
-
-  // const recipients = ['+2348112659304'];
-  const recipients = ['+38631512279', '+387603117027'];
-  for (const recipient of recipients) {
-    const smsData = {
-      type: 'transactional',
-      unicodeEnabled: false,
-      sender: 'LiftInflue',
-      recipient,
-      content
-    };
-
-    await axios
-      .post(apiUrl, smsData, {
-        headers: {
-          'Content-Type': 'application/json',
-          'api-key': apiKey,
-          'Accept': 'application/json'
-        }
-      })
-      .then((response) => {
-        console.log('SMS sent successfully:', response.data);
-        return ({ success: true, message: 'SMS sent successfully' })
-      })
-      .catch((error) => {
-        console.error('Error sending SMS:', error);
-        return ({ success: false, message: `Error sending SMS: ${error}` })
-      });
-  }
-}
 
 
 app.get('/api/send_sms_test', async (req, res) => {

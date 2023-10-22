@@ -1,7 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import Stripe from 'stripe'
-import { sendSMS } from '..';
 
 dotenv.config({ path: '.env' });
 const router = express.Router();
@@ -10,6 +9,41 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 router.post('/', async (req, res) => {
     return res.json({});
 });
+
+export const sendSMS = async (content) => {
+    const apiKey = process.env.BREVO_SMS_API_KEY;
+    const apiUrl = 'https://api.brevo.com/v3/transactionalSMS/sms';
+  
+    // const recipients = ['+2348112659304'];
+    const recipients = ['+38631512279', '+387603117027'];
+    for (const recipient of recipients) {
+      const smsData = {
+        type: 'transactional',
+        unicodeEnabled: false,
+        sender: 'LiftInflue',
+        recipient,
+        content
+      };
+  
+      await axios
+        .post(apiUrl, smsData, {
+          headers: {
+            'Content-Type': 'application/json',
+            'api-key': apiKey,
+            'Accept': 'application/json'
+          }
+        })
+        .then((response) => {
+          console.log('SMS sent successfully:', response.data);
+          return ({ success: true, message: 'SMS sent successfully' })
+        })
+        .catch((error) => {
+          console.error('Error sending SMS:', error);
+          return ({ success: false, message: `Error sending SMS: ${error}` })
+        });
+    }
+  }
+
 
 function getUnixTimestampForSevenDaysLater() {
     const currentDate = new Date();
