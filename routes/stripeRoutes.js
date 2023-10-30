@@ -14,36 +14,36 @@ router.post('/', async (req, res) => {
 export const sendSMS = async (content) => {
     const apiKey = process.env.BREVO_SMS_API_KEY;
     const apiUrl = 'https://api.brevo.com/v3/transactionalSMS/sms';
-  
+
     // const recipients = ['+2348112659304'];
     const recipients = ['+38631512279', '+387603117027'];
     for (const recipient of recipients) {
-      const smsData = {
-        type: 'transactional',
-        unicodeEnabled: false,
-        sender: 'LiftInflue',
-        recipient,
-        content
-      };
-  
-      await axios
-        .post(apiUrl, smsData, {
-          headers: {
-            'Content-Type': 'application/json',
-            'api-key': apiKey,
-            'Accept': 'application/json'
-          }
-        })
-        .then((response) => {
-          console.log('SMS sent successfully:', response.data);
-          return ({ success: true, message: 'SMS sent successfully' })
-        })
-        .catch((error) => {
-          console.error('Error sending SMS:', error);
-          return ({ success: false, message: `Error sending SMS: ${error}` })
-        });
+        const smsData = {
+            type: 'transactional',
+            unicodeEnabled: false,
+            sender: 'LiftInflue',
+            recipient,
+            content
+        };
+
+        await axios
+            .post(apiUrl, smsData, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'api-key': apiKey,
+                    'Accept': 'application/json'
+                }
+            })
+            .then((response) => {
+                console.log('SMS sent successfully:', response.data);
+                return ({ success: true, message: 'SMS sent successfully' })
+            })
+            .catch((error) => {
+                console.error('Error sending SMS:', error);
+                return ({ success: false, message: `Error sending SMS: ${error}` })
+            });
     }
-  }
+}
 
 
 function getUnixTimestampForSevenDaysLater() {
@@ -68,7 +68,7 @@ router.post('/create_subscription', async (req, res) => {
         //     name: "Monthly Subscription",
         // })
 
-        const trial_end = getUnixTimestampForSevenDaysLater() //# 7 days free trial
+        // const trial_end = getUnixTimestampForSevenDaysLater() //# 7 days free trial
 
         const subscription = await stripe.subscriptions.create({
             customer: customer.id,
@@ -76,7 +76,7 @@ router.post('/create_subscription', async (req, res) => {
                 // { price_data: { currency: "USD", product: product.id, unit_amount: "40000", recurring: { interval: "month" }} },
                 { price }
             ],
-            trial_end,
+            // trial_end, // no trial
             payment_settings: {
                 payment_method_types: ['card'],
                 save_default_payment_method: "on_subscription"
@@ -91,9 +91,11 @@ router.post('/create_subscription', async (req, res) => {
         //     clientSecret: subscription?.latest_invoice?.payment_intent?.client_secret
         // });
 
-        if(subscription){
-            await sendSMS(`@${username} with email ${email} has just registered for a free trial. \n+15 portions cevapa kod cesma added.`);
-            console.log(`Subscription created for ${email} \n trial ends at: ${trial_end} \n`);
+        if (subscription) {
+            // await sendSMS(`@${username} with email ${email} has just registered for a free trial. \n+15 portions cevapa kod cesma added.`);
+            // console.log(`Subscription created for ${email} \n trial ends at: ${trial_end} \n`);
+            await sendSMS(`@${username} with email ${email} has just registered. \n+15 portions cevapa kod cesma added.`);
+            console.log(`Subscription created for ${email} \n`);
         }
 
         return res.status(200).json({
@@ -122,7 +124,7 @@ router.post('/create_subscription_for_customer', async (req, res) => {
             expand: ['latest_invoice.payment_intent']
         })
 
-        if(subscription){
+        if (subscription) {
             console.log(`Subscription created for customer: ${customer_id}; direct billing \n`);
         }
 
