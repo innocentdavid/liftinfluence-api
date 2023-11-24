@@ -2,10 +2,15 @@ import express from 'express';
 import dotenv from 'dotenv';
 import Stripe from 'stripe'
 import axios from 'axios';
+import { createClient } from '@supabase/supabase-js';
 
 dotenv.config({ path: '.env' });
 const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 router.post('/', async (req, res) => {
     return res.json({});
@@ -68,21 +73,27 @@ router.post('/create_subscription', async (req, res) => {
         //     name: "Monthly Subscription",
         // })
 
-        // const trial_end = getUnixTimestampForSevenDaysLater() //# 7 days free trial
-
-        const subscription = await stripe.subscriptions.create({
+        const trial_end = getUnixTimestampForSevenDaysLater() //# 7 days free trial
+        const subData = {
             customer: customer.id,
             items: [
                 // { price_data: { currency: "USD", product: product.id, unit_amount: "40000", recurring: { interval: "month" }} },
                 { price }
             ],
-            // trial_end, // no trial
+            trial_end, // no trial
             payment_settings: {
                 payment_method_types: ['card'],
                 save_default_payment_method: "on_subscription"
             },
             expand: ['latest_invoice.payment_intent']
-        })
+        }
+        // check if user's username is in the freeTrialAllowed list
+        const { data, error } = await supabase.from('freeTrialAllowed').select().eq('username', username).single()
+        const is_allowed = data ? true : false;
+        if(!is_allowed){
+            delete subData.trial_end;
+        }
+        const subscription = await stripe.subscriptions.create(subData)
 
         // console.log({
         //     message: `Subscription successful!`,
