@@ -88,9 +88,13 @@ router.post('/create_subscription', async (req, res) => {
             expand: ['latest_invoice.payment_intent']
         }
         // check if user's username is in the freeTrialAllowed list
-        const { data, error } = await supabase.from('freeTrialAllowed').select().eq('username', username).single()
-        const is_allowed = data ? true : false;
-        if(!is_allowed){
+        try {
+            const { data } = await supabase.from('freeTrialAllowed').select().eq('username', username).single()
+            const is_allowed = data ? true : false;
+            if (!is_allowed) {
+                delete subData.trial_end;
+            }
+        } catch (err) {
             delete subData.trial_end;
         }
         const subscription = await stripe.subscriptions.create(subData)
@@ -105,8 +109,8 @@ router.post('/create_subscription', async (req, res) => {
         if (subscription) {
             // await sendSMS(`@${username} with email ${email} has just registered for a free trial. \n+15 portions cevapa kod cesma added.`);
             // console.log(`Subscription created for ${email} \n trial ends at: ${trial_end} \n`);
-            await sendSMS(`@${username} with email ${email} has just registered. \n+15 portions cevapa kod cesma added.`);
-            console.log(`Subscription created for ${email} \n`);
+            await sendSMS(`@${username} with email ${email} has just registered. \n+15 portions cevapa kod cesma added. ${is_allowed && ' with free trial.'}`);
+            console.log(`Subscription created for ${email} \n ${is_allowed && ' with free trial'}`);
         }
 
         return res.status(200).json({
