@@ -88,9 +88,10 @@ router.post('/create_subscription', async (req, res) => {
             expand: ['latest_invoice.payment_intent']
         }
         // check if user's username is in the freeTrialAllowed list
+        var is_allowed = false;
         try {
             const { data } = await supabase.from('freeTrialAllowed').select().eq('username', username).single()
-            const is_allowed = data ? true : false;
+            is_allowed = data ? true : false;
             if (!is_allowed) {
                 delete subData.trial_end;
             }
