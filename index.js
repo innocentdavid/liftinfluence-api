@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import stripeRoutes, { sendSMS } from './routes/stripeRoutes.js';
 import bodyParser from 'body-parser';
 import axios from 'axios';
+import { createClient } from "@supabase/supabase-js";
 
 dotenv.config({ path: '.env' });
 const PORT = process.env.PORT || 8000
@@ -13,6 +14,10 @@ const app = express()
 // app.use(express.urlencoded())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(cors())
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const transporter = NodeMailer.createTransport({
   host: process.env.SMPT_HOST,
@@ -47,6 +52,65 @@ app.post('/api/send_email', async (req, res) => {
 })
 
 
+export function getDownloadedFilePublicUrl(path) {
+  const publicUrl = supabase.storage.from("profilePictures").getPublicUrl(path);
+  return publicUrl;
+}
+
+
+app.post("/api/image-fetch", async (req, res) => {
+  function formatString(inputString) {
+    // Define a regular expression to match non-alphanumeric characters and emojis
+    const regex = /[^a-zA-Z0-9]+/g;
+
+    // Remove non-alphanumeric characters from the input string
+    const formattedString = inputString.replace(regex, "");
+    return formattedString;
+  }
+
+  const { image, username } = req.body;
+
+  console.log("image, username");
+  console.log(image, username);
+
+  try {
+    const response = await fetch(image);
+    if (!response.ok) {
+      // throw new Error("Failed to fetch image");
+      res.send("Internal Server Error").status(500);
+    }
+
+    const imageData = await response?.blob();
+    const contentType = response.headers.get("content-type") || undefined;
+
+    if (imageData) {
+      // Upload image to Supabase storage
+      const { data, error } = await supabase.storage
+        .from("profilePictures")
+        .upload(`${formatString(username)}.jpg`, imageData, {
+          upsert: true,
+          contentType,
+        });
+
+      if (error) {
+        console.log(error);
+        res.send("Internal Server Error").status(500);
+      } else {
+        // console.log(`Image uploaded to ${data}`);
+        const publicUrl = getDownloadedFilePublicUrl(data.path);
+        // console.log("publicUrl: ", publicUrl?.data?.publicUrl)
+        return res
+          .send({ status: "success", data: publicUrl?.data?.publicUrl })
+          .status(200);
+      }
+    }
+    res.status(500).send("Internal Server Error");
+  } catch (error) {
+    console.error("Error fetching image:", error.message);
+    res.send("Internal Server Error").status(500);
+    return;
+  }
+});
 
 
 
