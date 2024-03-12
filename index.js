@@ -228,7 +228,7 @@ console.log(
   "updateUsersGraphDataCron Schedule the cron job to run every day at 7am (0 6 * * *)"
 );
 cron.schedule("0 6 * * *", updateUsersDummyDataCron); // every day at 7am.
-// cron.schedule("1 * * * * *", updateUsersDummyDataCron); // every day at 7am.
+// cron.schedule("10 * * * * *", updateUsersDummyDataCron); // every day at 7am.
 // console.log("Schedule the cron job to run every day at 8am (0 7 * * *)");
 // cron.schedule("0 7 * * *", myCronJob); // every day at 8am.
 // cron.schedule("* * * * *", updateUsersDummyDataCron); // every minite
