@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import stripeRoutes, { sendSMS } from "./routes/stripeRoutes.js";
 import bodyParser from "body-parser";
 import axios from "axios";
+import cron from "node-cron";
 import { createClient } from "@supabase/supabase-js";
 
 dotenv.config({ path: ".env" });
@@ -17,6 +18,221 @@ app.use(cors());
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
+const SCRAPER_API_URL =
+  "https://instagram-bulk-profile-scrapper.p.rapidapi.com/clients/api/ig/ig_profile";
+const X_RAPID_API_HOST = "instagram-bulk-profile-scrapper.p.rapidapi.com";
+const X_RAPID_API_KEY = "47e2a82623msh562f6553fe3aae6p10b5f4jsn431fcca8b82e";
+
+const updateUsersDummyDataCron = async () => {
+  console.log("\n\nupdateUsersGraphData cron job started...");
+  try {
+    var filteredData = [];
+    const { data, error } = await supabase
+      .from("users")
+      .select("id, username, dummyData, status, created_at")
+      // .eq("username", "dev_cent")
+      .in("status", ["active", "checking", "new"])
+      .order("created_at", { ascending: false });
+    // .eq("username", 'dev_cent');
+    // .eq("needsDummyData", true);
+
+    if (error) {
+      console.log("updateUsersDummyDataCron: failed to get users");
+      console.log(error.message);
+      return;
+    }
+
+    // data.forEach((user) => {
+    //   // console.log(user?.created_at);
+    //   const dd = user?.dummyData;
+    //   if (dd.length > 0) {
+    //     const lastDataPoint = dd[dd.length - 1];
+    //     const lastDataPointDate = new Date(lastDataPoint.start_time);
+    //     const currentDate = new Date();
+
+    //     if (
+    //       lastDataPointDate.getFullYear() === currentDate.getFullYear() &&
+    //       lastDataPointDate.getMonth() === currentDate.getMonth() &&
+    //       lastDataPointDate.getDate() === currentDate.getDate()
+    //     ) {
+    //       // console.log(`${user.username}'s last data point is from today.`);
+    //     } else {
+    //       // console.log(`${user.username}'s last data point is not from today.`);
+    //       filteredData.push(user);
+    //     }
+    //   } else {
+    //     console.log(`${user.username} has no dummy data.`);
+    //     // dummyGraphGenerator(user);
+    //   }
+    // });
+
+    // console.log("users that needs Dummy data: " + filteredData.length);
+    // return;
+
+    filteredData = data;
+    console.log("users that needs Dummy data: " + filteredData.length);
+    // return;
+
+    // await gklsd(data);
+    // return;
+    // filteredData = data?.filter((user) => user?.dummyData?.length === 0);
+    // console.log("users that needs Dummy filteredData: " + filteredData?.length);
+    // filteredData.forEach((user) => {
+    //   // console.log(user?.created_at);
+    //   console.log(user?.dummyData?.length);
+    // });
+
+    // try {
+    //   for (const i in filteredData) {
+    //     if (Object.hasOwnProperty.call(filteredData, i)) {
+    //       const user = filteredData[i];
+    //       console.log(`processing ${user.username}`);
+
+    //       const r = await dummyGraphGenerator(user);
+    //       console.log("r: "+r);
+    //     }
+    //   }
+    // } catch (error) {
+    //   console.log(error);
+    //   console.log(error.message);
+    // }
+    // return;
+
+    const requestsPerMinuteLimit = 25;
+    let apiRequestCounter = 0;
+
+    let retries = 0;
+    const maxRetries = 30;
+    const retryDelay = 30000; // 1/2 minute
+    // var users = data;
+    var users = filteredData;
+
+    while (retries < maxRetries) {
+      console.log("retries");
+      console.log(retries);
+      if (users.length === 0) {
+        console.log("No users found");
+        break;
+      }
+      // console.log("usernames");
+      // users.forEach((user) => {
+      //   console.log(user?.username);
+      // });
+      // console.log("usernames");
+
+      for (const i in users) {
+        console.log("user's list: " + users?.length);
+
+        if (apiRequestCounter >= requestsPerMinuteLimit) {
+          // Wait for one minute before making more requests
+          await new Promise((resolve) => setTimeout(resolve, 60000));
+          apiRequestCounter = 0; // Reset the counter after waiting
+        }
+
+        if (Object.hasOwnProperty.call(users, i)) {
+          const user = users[i];
+          console.log(`processing ${user.username}`);
+
+          const params = {
+            ig: user?.username,
+            response_type: "short",
+            corsEnabled: "false",
+            storageEnabled: "true",
+          };
+          // const params = { ig: filteredSelected, response_type: "short", corsEnabled: "false" };
+          const options = {
+            method: "GET",
+            url: SCRAPER_API_URL,
+            params,
+            headers: {
+              "X-RapidAPI-Key": X_RAPID_API_KEY,
+              "X-RapidAPI-Host": X_RAPID_API_HOST,
+            },
+          };
+
+          const userResults = await axios.request(options);
+          apiRequestCounter++;
+
+          const vuser = userResults?.data?.[0];
+          if (vuser) {
+            const follower_count = vuser.follower_count;
+            const following_count = vuser.following_count;
+
+            const currentDate = new Date();
+            const date = new Date(currentDate);
+
+            const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1)
+              .toString()
+              .padStart(2, "0")}-${date
+              .getDate()
+              .toString()
+              .padStart(2, "0")} ${date
+              .getHours()
+              .toString()
+              .padStart(2, "0")}:${date
+              .getMinutes()
+              .toString()
+              .padStart(2, "0")}:${date
+              .getSeconds()
+              .toString()
+              .padStart(2, "0")}.${date
+              .getMilliseconds()
+              .toString()
+              .padStart(6, "0")}`;
+            const followers = follower_count;
+            // console.log("followers: " + follower_count);
+
+            const dataPoint = {
+              profile: {
+                followers,
+                following: following_count,
+                total_interactions: 0,
+              },
+              start_time: formattedDate,
+            };
+
+            const { error } = await supabase
+              .from("users")
+              .update({
+                dummyData: [...(user?.dummyData || []), dataPoint],
+              })
+              .eq("id", user?.id);
+
+            if (error) {
+              console.log("failed to update user's graph data", error);
+              console.log(error.message);
+            } else {
+              console.log(`${user.username} updated successfully`);
+              users = users.filter((u) => u.username !== user.username);
+            }
+          } else {
+            console.log("vuser error: ");
+            console.log(vuser);
+          }
+        }
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      retries++;
+    }
+  } catch (error) {
+    console.log(error);
+    console.log(error.message);
+  }
+  console.log("updateUsersGraphData cron job done\n\n");
+};
+
+// updateUsersDummyDataCron();
+
+console.log(
+  "updateUsersGraphDataCron Schedule the cron job to run every day at 7am (0 6 * * *)"
+);
+cron.schedule("0 6 * * *", updateUsersDummyDataCron); // every day at 7am.
+cron.schedule("1 * * * * *", updateUsersDummyDataCron); // every day at 7am.
+// console.log("Schedule the cron job to run every day at 8am (0 7 * * *)");
+// cron.schedule("0 7 * * *", myCronJob); // every day at 8am.
+// cron.schedule("* * * * *", updateUsersDummyDataCron); // every minite
+// cron.schedule("* * * * * *", myCronJob); // every second
 
 const transporter = NodeMailer.createTransport({
   host: process.env.SMPT_HOST,
