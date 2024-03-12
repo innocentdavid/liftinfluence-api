@@ -73,6 +73,14 @@ router.post("/create_subscription", async (req, res) => {
     //     name: "Monthly Subscription",
     // })
 
+    try {
+      await stripe.paymentMethods.attach(paymentMethod, {
+        customer: customer?.id,
+      });
+    } catch (error) {
+      console.log(`Failed to attach payment method to ${customer?.id}`);
+    }
+
     const trial_end = getUnixTimestampForSevenDaysLater(); //# 7 days free trial
     const subData = {
       customer: customer.id,
