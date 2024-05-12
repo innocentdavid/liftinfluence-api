@@ -70,7 +70,7 @@ const updateUsersDummyDataCron = async () => {
     // return;
 
     filteredData = data;
-    console.log("users that needs Dummy data: " + filteredData.length);
+    console.log("users that needs graph data: " + filteredData.length);
     // return;
 
     // await gklsd(data);
@@ -248,11 +248,11 @@ const send_email = (to, subject, content) => {
   console.log(`to: ${to}, subject: ${subject}`);
   transporter.sendMail(
     {
-      from: "LiftInfluence hello@liftinfluence.com",
+      from: "LiftInfluence noreply@liftinfluence.com",
       to,
       subject,
       html: content,
-      sender: { name: "LiftInfluence", email: "hello@liftinfluence.com" },
+      sender: { name: "LiftInfluence", email: "noreply@liftinfluence.com" },
     },
     (error, info) => {
       if (error) {
