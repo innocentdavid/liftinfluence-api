@@ -3,6 +3,7 @@ import cors from "cors";
 import NodeMailer from "nodemailer";
 import dotenv from "dotenv";
 import stripeRoutes, { sendSMS } from "./routes/stripeRoutes.js";
+import stripeWebhook from "./routes/stripe-webhook.js";
 import bodyParser from "body-parser";
 import axios from "axios";
 import cron from "node-cron";
@@ -402,6 +403,7 @@ app.post("/api/send_email", async (req, res) => {
 });
 
 app.use("/api/stripe", stripeRoutes);
+app.use("/api/stripe-webhook", stripeWebhook);
 
 app.get("/", (req, res) => res.send("Hello World!"));
 

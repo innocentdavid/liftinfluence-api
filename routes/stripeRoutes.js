@@ -57,6 +57,25 @@ function getUnixTimestampForSevenDaysLater() {
   return Math.floor(sevenDaysLater.getTime() / 1000); // Convert to Unix timestamp (in seconds)
 }
 
+router.post("/create_customer_portal", async (req, res) => {
+  try {
+    const { customer_id, return_url } = req.body;
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customer_id,
+      return_url,
+    });
+
+    return res.status(200).json({
+      url: session.url,
+    });
+  } catch (error) {
+    console.error(error?.message);
+    return res
+      .status(500)
+      .json({ message: `${error.message}` });
+  }
+});
+
 // new subscription with 7days trial.
 router.post("/create_subscription", async (req, res) => {
   try {
