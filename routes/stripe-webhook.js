@@ -42,6 +42,19 @@ router.post(
 
     const subscription = event?.data?.object;
     if (subscription?.object === "subscription") {
+      const { data: user } = await supabaseAdmin
+        .from("users")
+        .select("*")
+        .eq("customer_id", subscription.customer)
+        .single();
+      if (
+        user?.id &&
+        subscription.status !== "cancelled" &&
+        user.status === "active"
+      ) {
+        return res.status(200);
+      }
+
       console.log(
         subscription.customer +
           "'s subscription status is: " +
