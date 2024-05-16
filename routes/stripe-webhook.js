@@ -34,72 +34,103 @@ router.post(
       event = stripe.webhooks.constructEvent(
         body,
         signature,
-        process.env.STRIPE_WEBHOOK_SECRET || ""
+        process.env.NODE_ENV === "production"
+          ? process.env.STRIPE_WEBHOOK_SECRET || ""
+          : "whsec_b3c2cf13ee9886d2f2ae89bf054726804a317a13305069ccb712ca6801fe4363"
       );
     } catch (error) {
       return res.status(400).json({ message: `${error.message}` });
     }
 
-    
     const subscription = event?.data?.object;
     if (subscription?.object === "subscription") {
-      if(event.type !== "customer.subscription.updated"){
+      if (event.type !== "customer.subscription.updated") {
         return res.status(200);
       }
+
+      console.log("event.data.previous_attributes");
+      console.log(event.data.previous_attributes);
+      console.log("\n");
+
       const { data: user } = await supabaseAdmin
         .from("users")
         .select("*")
         .eq("customer_id", subscription.customer)
         .single();
+
+      const currentPeriodEndChanged =
+        "current_period_end" in event.data.previous_attributes;
+      const cancelAtChanged = "cancel_at" in event.data.previous_attributes;
+      const cancelAtPeriodEndChanged =
+        "cancel_at_period_end" in event.data.previous_attributes;
+      let e;
       if (
-        user?.id &&
-        subscription.status !== "cancelled" &&
-        user.status === "active"
+        currentPeriodEndChanged &&
+        !cancelAtChanged &&
+        !cancelAtPeriodEndChanged
       ) {
+        console.log("The subscription has been renewed.");
+        e = "renew";
+      } else {
+        console.log("The subscription has been cancelled.");
+        e = "cancelled";
+      }
+      if (["renew", "cancelled"].includes(e)) {
+        if (
+          user?.id &&
+          subscription.status !== "cancelled" &&
+          user.status === "active"
+        ) {
+          console.log(`subscription.status, user.status`);
+          console.log(subscription.status, user.status);
+          return res.status(200);
+        }
+
+        console.log(
+          "prevstatus: ",
+          subscription.cancel_at_period_end &&
+            (subscription.status === "active" ||
+              subscription.status === "trialing")
+            ? "new"
+            : "cancelled"
+        );
+        console.log(
+          subscription.customer +
+            "'s subscription status is: " +
+            subscription.status
+        );
+
+        const { error, data } = await supabaseAdmin
+          .from("users")
+          .update({
+            subscription_id: subscription.id,
+            subscription_status: subscription.status,
+            subscribed:
+              !subscription.cancel_at_period_end &&
+              (subscription.status === "active" ||
+                subscription.status === "trialing")
+                ? true
+                : false,
+            status:
+              !subscription.cancel_at_period_end &&
+              (subscription.status === "active" ||
+                subscription.status === "trialing")
+                ? "new"
+                : "cancelled",
+            subscription_updated_at: new Date(),
+          })
+          .eq("customer_id", subscription.customer)
+          .select("*")
+          .single();
+
+        if (error || !data) {
+          console.log(error.message);
+          return res.status(404).json({ message: error.message });
+        }
+
         return res.status(200);
       }
 
-      console.log(
-        subscription.customer +
-          "'s subscription status is: " +
-          subscription.status
-      );
-      console.log(
-        "status: ",
-        subscription.cancel_at_period_end &&
-          (subscription.status === "active" ||
-            subscription.status === "trialing")
-          ? "new"
-          : "cancelled"
-      );
-
-      const { error, data } = await supabaseAdmin
-        .from("users")
-        .update({
-          subscription_id: subscription.id,
-          subscription_status: subscription.status,
-          subscribed:
-            !subscription.cancel_at_period_end &&
-            (subscription.status === "active" ||
-              subscription.status === "trialing")
-              ? true
-              : false,
-          status:
-            !subscription.cancel_at_period_end &&
-            (subscription.status === "active" ||
-              subscription.status === "trialing")
-              ? "new"
-              : "cancelled",
-          subscription_updated_at: new Date(),
-        })
-        .eq("customer_id", subscription.customer)
-        .select("*")
-        .single();
-
-      if (error || !data) {
-        console.log(error.message);
-        return res.status(404).json({ message: error.message });
-      }
       return res.status(200);
     } else if (event) {
       return res
