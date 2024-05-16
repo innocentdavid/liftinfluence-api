@@ -40,8 +40,12 @@ router.post(
       return res.status(400).json({ message: `${error.message}` });
     }
 
+    
     const subscription = event?.data?.object;
     if (subscription?.object === "subscription") {
+      if(event.type !== "customer.subscription.updated"){
+        return res.status(200);
+      }
       const { data: user } = await supabaseAdmin
         .from("users")
         .select("*")
