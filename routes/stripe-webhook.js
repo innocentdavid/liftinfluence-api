@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
+import { send_email } from "../index.js";
 
 dotenv.config({ path: ".env" });
 const router = express.Router();
@@ -73,6 +74,17 @@ router.post(
         e = "renew";
       } else {
         console.log("The subscription has been cancelled.");
+        try {
+          send_email(
+            "hello@liftinfluence.com",
+            "Subscription cancellation",
+            `${user?.username} cancelled their subscription`
+          );
+        } catch (error) {
+          console.log(
+            "Failed to send email to hello@liftinfluence.com about cancellation"
+          );
+        }
         e = "cancelled";
       }
       if (["renew", "cancelled"].includes(e)) {

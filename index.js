@@ -32,7 +32,7 @@ const updateUsersDummyDataCron = async () => {
       .from("users")
       .select("id, username, dummyData, status, created_at")
       // .eq("username", "dev_cent")
-      .in("status", ["active", "checking", "new"])
+      .in("status", ["active", "analytics", "checking", "new"])
       .order("created_at", { ascending: false });
     // .eq("username", 'dev_cent');
     // .eq("needsDummyData", true);
@@ -245,7 +245,7 @@ const transporter = NodeMailer.createTransport({
   },
 });
 
-const send_email = (to, subject, content) => {
+export const send_email = (to, subject, content) => {
   console.log(`to: ${to}, subject: ${subject}`);
   transporter.sendMail(
     {
@@ -268,7 +268,10 @@ const send_email = (to, subject, content) => {
 };
 
 app.post("/api/send_email", async (req, res) => {
-  send_email(req.body.email, req.body.subject, req.body.htmlContent);
+  const { email, subject, htmlContent } = req.body;
+  // console.log({ email, subject, htmlContent });
+
+  send_email(email, subject, htmlContent);
   res.send({ success: true, message: "Email sent successfully" });
 });
 
@@ -342,43 +345,47 @@ app.post("/api/image-fetch", async (req, res) => {
 // var phoneNumber = new Brevo.SendTestSms(); // SendTestSms | Mobile number of the recipient with the country code. This number must belong to one of your contacts in Brevo account and must not be blacklisted
 
 // send_sms to
-app.post("/api/send_sms", async (req, res) => {
-  const { recipient, content } = req.body;
-  const apiKey = process.env.BREVO_SMS_API_KEY;
-  const apiUrl = "https://api.brevo.com/v3/transactionalSMS/sms";
+app.post(
+  "/api/send_sms",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    const { recipient, content } = req.body;
+    const apiKey = process.env.BREVO_SMS_API_KEY;
+    const apiUrl = "https://api.brevo.com/v3/transactionalSMS/sms";
 
-  const smsData = {
-    type: "transactional",
-    unicodeEnabled: true,
-    sender: "LiftInflue",
-    recipient,
-    content,
-  };
+    const smsData = {
+      type: "transactional",
+      unicodeEnabled: true,
+      sender: "LiftInflue",
+      recipient,
+      content,
+    };
 
-  try {
-    const resp = await axios
-      .post(apiUrl, smsData, {
-        headers: {
-          "Content-Type": "application/json",
-          "api-key": apiKey,
-          Accept: "application/json",
-        },
-      })
-      .then((response) => {
-        console.log("SMS sent successfully:", response.data);
-        return { success: true, message: "SMS sent successfully" };
-      })
-      .catch((error) => {
-        console.log("Error sending SMS:", error.message);
-        return { success: false, message: `Error sending SMS: ${error}` };
-      });
-    res.send(resp).status(200);
-  } catch (error) {
-    console.log("failed to send SMS");
-    console.log(error);
-    res.send(error).status(500);
+    try {
+      const resp = await axios
+        .post(apiUrl, smsData, {
+          headers: {
+            "Content-Type": "application/json",
+            "api-key": apiKey,
+            Accept: "application/json",
+          },
+        })
+        .then((response) => {
+          console.log("SMS sent successfully:", response.data);
+          return { success: true, message: "SMS sent successfully" };
+        })
+        .catch((error) => {
+          console.log("Error sending SMS:", error.message);
+          return { success: false, message: `Error sending SMS: ${error}` };
+        });
+      res.send(resp).status(200);
+    } catch (error) {
+      console.log("failed to send SMS");
+      console.log(error);
+      res.send(error).status(500);
+    }
   }
-});
+);
 
 app.get("/api/send_sms_test", async (req, res) => {
   // const username = 'dev_cent';
@@ -397,10 +404,13 @@ app.get("/api/send_email_test", async (req, res) => {
   res.send({ success: true, message: "Email sent successfully" });
 });
 
-app.post("/api/send_email", async (req, res) => {
-  send_email(req.body.email, req.body.subject, req.body.htmlContent);
-  res.send({ success: true, message: "Email sent successfully" });
-});
+// app.post("/api/send_email", async (req, res) => {
+//   const { email, subject, htmlContent } = req.body;
+//   console.log({ email, subject, htmlContent });
+
+//   send_email(email, subject, htmlContent);
+//   res.send({ success: true, message: "Email sent successfully" });
+// });
 
 app.use("/api/stripe", stripeRoutes);
 app.use("/api/stripe-webhook", stripeWebhook);
