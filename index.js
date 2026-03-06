@@ -10,7 +10,7 @@ import cron from "node-cron";
 import { createClient } from "@supabase/supabase-js";
 
 dotenv.config({ path: ".env" });
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 8080;
 const app = express();
 // app.use(express.urlencoded())
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -20,9 +20,9 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 const SCRAPER_API_URL =
-  "https://instagram-bulk-profile-scrapper.p.rapidapi.com/clients/api/ig/ig_profile";
-const X_RAPID_API_HOST = "instagram-bulk-profile-scrapper.p.rapidapi.com";
-const X_RAPID_API_KEY = "47e2a82623msh562f6553fe3aae6p10b5f4jsn431fcca8b82e";
+  "https://media-api4.p.rapidapi.com/v1/info";
+const X_RAPID_API_HOST = "media-api4.p.rapidapi.com";
+const X_RAPID_API_KEY = process.env.X_RAPID_API_KEY || "";
 
 const updateUsersDummyDataCron = async () => {
   console.log("\n\nupdateUsersGraphData cron job started...");
@@ -135,12 +135,8 @@ const updateUsersDummyDataCron = async () => {
           console.log(`processing ${user.username}`);
 
           const params = {
-            ig: user?.username,
-            response_type: "short",
-            corsEnabled: "false",
-            storageEnabled: "true",
+            username_or_id_or_url: user?.username,
           };
-          // const params = { ig: filteredSelected, response_type: "short", corsEnabled: "false" };
           const options = {
             method: "GET",
             url: SCRAPER_API_URL,
@@ -151,64 +147,80 @@ const updateUsersDummyDataCron = async () => {
             },
           };
 
-          const userResults = await axios.request(options);
-          apiRequestCounter++;
+          try {
+            const userResults = await axios.request(options);
+            apiRequestCounter++;
 
-          const vuser = userResults?.data?.[0];
-          if (vuser) {
-            const follower_count = vuser.follower_count;
-            const following_count = vuser.following_count;
+            const vuser = userResults?.data?.data || userResults?.data?.[0] || null;
+            if (vuser) {
+              const followerCountRaw =
+                vuser?.follower_count || vuser?.edge_followed_by?.count || 0;
+              const followingCountRaw =
+                vuser?.following_count || vuser?.edge_follow?.count || 0;
+              const follower_count = Number(followerCountRaw);
+              const following_count = Number(followingCountRaw);
+              const safeFollowerCount = Number.isFinite(follower_count)
+                ? follower_count
+                : 0;
+              const safeFollowingCount = Number.isFinite(following_count)
+                ? following_count
+                : 0;
 
-            const currentDate = new Date();
-            const date = new Date(currentDate);
+              const currentDate = new Date();
+              const date = new Date(currentDate);
 
-            const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1)
-              .toString()
-              .padStart(2, "0")}-${date
-              .getDate()
-              .toString()
-              .padStart(2, "0")} ${date
-              .getHours()
-              .toString()
-              .padStart(2, "0")}:${date
-              .getMinutes()
-              .toString()
-              .padStart(2, "0")}:${date
-              .getSeconds()
-              .toString()
-              .padStart(2, "0")}.${date
-              .getMilliseconds()
-              .toString()
-              .padStart(6, "0")}`;
-            const followers = follower_count;
-            // console.log("followers: " + follower_count);
+              const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1)
+                .toString()
+                .padStart(2, "0")}-${date
+                  .getDate()
+                  .toString()
+                  .padStart(2, "0")} ${date
+                    .getHours()
+                    .toString()
+                    .padStart(2, "0")}:${date
+                      .getMinutes()
+                      .toString()
+                      .padStart(2, "0")}:${date
+                        .getSeconds()
+                        .toString()
+                        .padStart(2, "0")}.${date
+                          .getMilliseconds()
+                          .toString()
+                          .padStart(6, "0")}`;
+              const followers = safeFollowerCount;
+              // console.log("followers: " + follower_count);
 
-            const dataPoint = {
-              profile: {
-                followers,
-                following: following_count,
-                total_interactions: 0,
-              },
-              start_time: formattedDate,
-            };
+              const dataPoint = {
+                profile: {
+                  followers,
+                  following: safeFollowingCount,
+                  total_interactions: 0,
+                },
+                start_time: formattedDate,
+              };
 
-            const { error } = await supabase
-              .from("users")
-              .update({
-                dummyData: [...(user?.dummyData || []), dataPoint],
-              })
-              .eq("id", user?.id);
+              const { error } = await supabase
+                .from("users")
+                .update({
+                  dummyData: [...(user?.dummyData || []), dataPoint],
+                })
+                .eq("id", user?.id);
 
-            if (error) {
-              console.log("failed to update user's graph data", error);
-              console.log(error.message);
+              if (error) {
+                console.log("failed to update user's graph data", error);
+                console.log(error.message);
+              } else {
+                console.log(`${user.username} updated successfully`);
+                users = users.filter((u) => u.username !== user.username);
+              }
             } else {
-              console.log(`${user.username} updated successfully`);
-              users = users.filter((u) => u.username !== user.username);
+              console.log("vuser error: ");
+              console.log(vuser);
             }
-          } else {
-            console.log("vuser error: ");
-            console.log(vuser);
+          } catch (error) {
+            console.log("Failed to fetch data for user: " + user.username);
+            console.log(error.message);
+            continue
           }
         }
       }
@@ -223,7 +235,7 @@ const updateUsersDummyDataCron = async () => {
   console.log("updateUsersGraphData cron job done\n\n");
 };
 
-// updateUsersDummyDataCron();
+updateUsersDummyDataCron();
 
 console.log(
   "updateUsersGraphDataCron Schedule the cron job to run every day at 7am (0 6 * * *)"
