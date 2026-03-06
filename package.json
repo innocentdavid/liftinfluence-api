@@ -5,8 +5,10 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
+    "build": "echo \"No build step required\"",
+    "dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npx nodemon yarn start"
+    "start": "node index.js"
   },
   "author": "",
   "license": "ISC",
