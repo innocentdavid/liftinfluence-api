@@ -24,6 +24,63 @@ const SCRAPER_API_URL =
 const X_RAPID_API_HOST = "media-api4.p.rapidapi.com";
 const X_RAPID_API_KEY = process.env.X_RAPID_API_KEY || "";
 
+/** Ping each Supabase project so free-tier org projects are not paused for inactivity. */
+const KEEP_ALIVE_PROJECTS = [
+  {
+    name: "main (liftinfluence)",
+    url: process.env.SUPABASE_URL,
+    secretKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    table: "users",
+  },
+  {
+    name: "crm-saas",
+    url: process.env.SUPABASE_URL_CRM,
+    secretKey: process.env.SUPABASE_SERVICE_ROLE_KEY_CRM,
+    table: process.env.SUPABASE_KEEPALIVE_TABLE_CRM || null,
+  },
+];
+
+const keepSupabaseProjectsActive = async () => {
+  console.log("\n[keep-alive] pinging Supabase projects...");
+  const primaryClientBase =
+    typeof supabaseUrl === "string" ? supabaseUrl.replace(/\/$/, "") : "";
+  for (const p of KEEP_ALIVE_PROJECTS) {
+    if (!p.url) {
+      console.log(`[keep-alive] ${p.name}: skipped (no URL)`);
+      continue;
+    }
+    try {
+      const isPrimaryProject =
+        primaryClientBase &&
+        p.url.replace(/\/$/, "") === primaryClientBase;
+      if (isPrimaryProject && p.table && supabase) {
+        const { error } = await supabase
+          .from(p.table)
+          .select("*", { count: "exact", head: true })
+          .limit(1);
+        if (error) throw error;
+        console.log(`[keep-alive] ${p.name}: ok (select ${p.table})`);
+      } else if (p.secretKey && p.table) {
+        const client = createClient(p.url, p.secretKey);
+        const { error } = await client
+          .from(p.table)
+          .select("*", { count: "exact", head: true })
+          .limit(1);
+        if (error) throw error;
+        console.log(`[keep-alive] ${p.name}: ok (select ${p.table})`);
+      } else {
+        const res = await fetch(`${p.url}/auth/v1/health`);
+        console.log(`[keep-alive] ${p.name}: ok (health ${res.status})`);
+      }
+    } catch (err) {
+      console.log(
+        `[keep-alive] ${p.name}: failed - ${err?.message || String(err)}`
+      );
+    }
+  }
+  console.log("[keep-alive] done\n");
+};
+
 const updateUsersDummyDataCron = async () => {
   console.log("\n\nupdateUsersGraphData cron job started...");
   try {
@@ -235,7 +292,16 @@ const updateUsersDummyDataCron = async () => {
   console.log("updateUsersGraphData cron job done\n\n");
 };
 
-updateUsersDummyDataCron();
+//? for testing
+keepSupabaseProjectsActive()
+
+console.log(
+  "keepSupabaseProjectsActive: cron 3x/day at 5:30am, 2:30pm, 9:30pm local (30 5,14,21 * * *)"
+);
+cron.schedule("30 5,14,21 * * *", keepSupabaseProjectsActive); // 5:30, 14:30, 21:30 local
+
+//? for testing
+// updateUsersDummyDataCron();
 
 console.log(
   "updateUsersGraphDataCron Schedule the cron job to run every day at 7am (0 6 * * *)"
